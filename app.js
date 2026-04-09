@@ -11,6 +11,7 @@ const ejsMate = require("ejs-mate");
 const expressError = require("./public/js/expressError.js");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -25,8 +26,13 @@ const port = process.env.PORT || 8000;
 const sessionSecret = process.env.SESSION_SECRET || "secretcode";
 const sessionOptions = {
   secret: sessionSecret,
-  saveUninitialized: true,
+  saveUninitialized: false,
   resave: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  },
 };
 
 const MONGO_URL = process.env.MONGO_URL;
@@ -35,6 +41,10 @@ if (!MONGO_URL) {
   console.error("MONGO_URL environment variable is required");
   process.exit(1);
 }
+
+sessionOptions.store = MongoStore.create({
+  mongoUrl: MONGO_URL,
+});
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
