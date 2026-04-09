@@ -29,17 +29,11 @@ const sessionOptions = {
   resave: false,
 };
 
-const rawMongoUrl = process.env.MONGO_URL && process.env.MONGO_URL.trim();
-const validMongoUrl =
-  rawMongoUrl && /^(mongodb:\/\/|mongodb\+srv:\/\/)/.test(rawMongoUrl);
-const MONGO_URL = validMongoUrl
-  ? rawMongoUrl
-  : "mongodb://127.0.0.1:27017/wanderlust";
+const MONGO_URL = process.env.MONGO_URL;
 
-if (rawMongoUrl && !validMongoUrl) {
-  console.warn(
-    "Warning: MONGO_URL is invalid or unsupported. Falling back to local MongoDB.",
-  );
+if (!MONGO_URL) {
+  console.error("MONGO_URL environment variable is required");
+  process.exit(1);
 }
 
 app.set("view engine", "ejs");
@@ -78,10 +72,16 @@ app.use((req, res, next) => {
 // Database connection
 async function connectDatabase() {
   try {
-    await mongoose.connect(MONGO_URL);
+    await mongoose.connect(MONGO_URL, {
+      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+    });
+
     console.log("Database Connected Successfully");
   } catch (err) {
-    console.log(err);
+    console.error("Database connection error:", err);
+    throw err;
   }
 }
 
