@@ -85,6 +85,19 @@ async function connectDatabase() {
   }
 }
 
+// Middleware to ensure database connection in serverless
+app.use(async (req, res, next) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      await connectDatabase();
+    }
+    next();
+  } catch (err) {
+    console.error("Database middleware error:", err);
+    return next(err);
+  }
+});
+
 app.get("/", (req, res) => {
   res.redirect("/listings");
 });
