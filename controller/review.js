@@ -1,5 +1,6 @@
 const Listing = require("../models/listing.js");
 const Review = require("../models/review.js");
+const expressError = require("../public/js/expressError.js");
 
 module.exports.addReview = async (req, res, next) => {
   const { id } = req.params;
@@ -23,7 +24,7 @@ module.exports.addReview = async (req, res, next) => {
   // Set a success flash message
   req.flash(
     "success",
-    "Thank you for your feedback! Your review has been successfully added."
+    "Thank you for your feedback! Your review has been successfully added.",
   );
 
   // Redirect to the listing detail page
@@ -42,6 +43,11 @@ module.exports.destroyReview = async (req, res, next) => {
       req.flash("error", "Sorry, we couldn't find that review to delete.");
       return res.redirect(`/listings/${id}`);
     }
+
+    // Remove the deleted review from the listing's reviews array
+    await Listing.findByIdAndUpdate(id, {
+      $pull: { reviews: reviewId },
+    });
 
     // Successfully deleted the review
     req.flash("success", "Your review has been successfully deleted.");

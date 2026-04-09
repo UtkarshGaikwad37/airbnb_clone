@@ -7,7 +7,7 @@ cloudinary.config({
   api_secret: process.env.CLOUD_API_SECRET,
 });
 
-const storage = CloudinaryStorage({
+const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: "wanderlust_dev",

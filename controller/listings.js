@@ -48,6 +48,11 @@ module.exports.newListingForm = async (req, res) => {
 // CREATE
 module.exports.createNewListing = async (req, res) => {
   try {
+    if (!req.file) {
+      req.flash("error", "Please upload an image for the listing.");
+      return res.redirect("/listings/new");
+    }
+
     let url = req.file.secure_url;
     let filename = req.file.public_id;
 

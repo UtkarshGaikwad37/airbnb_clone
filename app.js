@@ -21,15 +21,26 @@ const reviewRoutes = require("./routes/review.js");
 const userRoutes = require("./routes/user.js");
 
 const app = express();
-const port = 8000;
+const port = process.env.PORT || 8000;
+const sessionSecret = process.env.SESSION_SECRET || "secretcode";
 const sessionOptions = {
-  secret: "secretcode",
+  secret: sessionSecret,
   saveUninitialized: true,
   resave: false,
 };
-require("dotenv").config();
-const MONGO_URL =
-  process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
+
+const rawMongoUrl = process.env.MONGO_URL && process.env.MONGO_URL.trim();
+const validMongoUrl =
+  rawMongoUrl && /^(mongodb:\/\/|mongodb\+srv:\/\/)/.test(rawMongoUrl);
+const MONGO_URL = validMongoUrl
+  ? rawMongoUrl
+  : "mongodb://127.0.0.1:27017/wanderlust";
+
+if (rawMongoUrl && !validMongoUrl) {
+  console.warn(
+    "Warning: MONGO_URL is invalid or unsupported. Falling back to local MongoDB.",
+  );
+}
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -107,7 +118,7 @@ app.use((req, res, next) => {
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  const { statusCode = 500, message = "Something Went Wrong" } = err;
+  let { statusCode = 500, message = "Something Went Wrong" } = err;
   if (statusCode === 400 && err.details) {
     message = err.details.map((detail) => detail.message).join(", ");
   }
@@ -127,6 +138,10 @@ async function main() {
 
 main().catch((err) => console.log(err));
 
-app.listen(port, () => {
-  console.log("Server Started On Port: " + port);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log("Server Started On Port: " + port);
+  });
+}
+
+module.exports = app;
